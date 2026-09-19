@@ -76,9 +76,9 @@ async function getMerchantId(userId: string): Promise<string | null> {
 // ---------- LIST ----------------------------------------------------------
 export const listOrders = createServerFn({ method: "GET" }).handler(
   async (): Promise<OrderRow[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     if (!merchantId) return [];
     const admin = getSupabaseAdmin();
@@ -122,9 +122,9 @@ export interface EarningsSummary {
 
 export const getEarningsSummary = createServerFn({ method: "GET" }).handler(
   async (): Promise<EarningsSummary> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     if (!merchantId) return { orderCount: 0, totalProfit: 0, pendingProfit: 0, currency: "" };
     const admin = getSupabaseAdmin();
@@ -183,9 +183,9 @@ export const confirmOrderPayment = createServerFn({ method: "POST" })
       | { ok: true; alreadyConfirmed?: boolean }
       | { ok: false; error: "insufficient_stock"; shortages: OrderItem[] }
     > => {
-      const { requireUserId } = await import("@/lib/session-guard.server");
+      const { requirePermission } = await import("@/lib/session-guard.server");
       const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { userId } = await requireUserId();
+      const { userId } = await requirePermission("orders");
       const merchantId = await getMerchantId(userId);
       if (!merchantId) throw new Error("لا يوجد متجر مرتبط بحسابك.");
       const admin = getSupabaseAdmin();
@@ -250,9 +250,9 @@ export const confirmOrderPayment = createServerFn({ method: "POST" })
 export const updateOrderStatus = createServerFn({ method: "POST" })
   .inputValidator((v: { id: string; status: "prepared" | "shipped" | "delivered" }) => v)
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     if (!merchantId) throw new Error("لا يوجد متجر مرتبط بحسابك.");
     const admin = getSupabaseAdmin();
@@ -337,9 +337,9 @@ export interface StatusMessagesSettings {
 
 export const getOrderStatusMessages = createServerFn({ method: "GET" }).handler(
   async (): Promise<StatusMessagesSettings> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     const fallback: StatusMessagesSettings = {
       prepared: DEFAULT_PREPARED_MESSAGE,
@@ -381,9 +381,9 @@ export const setOrderStatusMessages = createServerFn({ method: "POST" })
     }) => v,
   )
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     if (!merchantId) throw new Error("لا يوجد متجر مرتبط بحسابك.");
     const admin = getSupabaseAdmin();
@@ -423,9 +423,9 @@ export const setOrderStatusMessages = createServerFn({ method: "POST" })
 export const cancelOrder = createServerFn({ method: "POST" })
   .inputValidator((v: { id: string }) => v)
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("orders");
     const merchantId = await getMerchantId(userId);
     if (!merchantId) throw new Error("لا يوجد متجر مرتبط بحسابك.");
     const admin = getSupabaseAdmin();

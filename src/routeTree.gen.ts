@@ -24,6 +24,7 @@ import { Route as PoliciesRouteImport } from './routes/policies'
 import { Route as ProductsRouteImport } from './routes/products'
 import { Route as PublishedRouteImport } from './routes/published'
 import { Route as ShippingRouteImport } from './routes/shipping'
+import { Route as TeamRouteImport } from './routes/team'
 import { Route as WelcomeRouteImport } from './routes/welcome'
 import { Route as ApiChatAiRouteImport } from './routes/api/chat-ai'
 import { Route as ApiVisitorRouteImport } from './routes/api/visitor'
@@ -111,6 +112,11 @@ const ShippingRoute = ShippingRouteImport.update({
   path: '/shipping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TeamRoute = TeamRouteImport.update({
+  id: '/team',
+  path: '/team',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WelcomeRoute = WelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/products': typeof ProductsRoute
   '/published': typeof PublishedRoute
   '/shipping': typeof ShippingRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/api/chat-ai': typeof ApiChatAiRoute
   '/api/visitor': typeof ApiVisitorRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/products': typeof ProductsRoute
   '/published': typeof PublishedRoute
   '/shipping': typeof ShippingRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/api/chat-ai': typeof ApiChatAiRoute
   '/api/visitor': typeof ApiVisitorRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/products': typeof ProductsRoute
   '/published': typeof PublishedRoute
   '/shipping': typeof ShippingRoute
+  '/team': typeof TeamRoute
   '/welcome': typeof WelcomeRoute
   '/api/chat-ai': typeof ApiChatAiRoute
   '/api/visitor': typeof ApiVisitorRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/published'
     | '/shipping'
+    | '/team'
     | '/welcome'
     | '/api/chat-ai'
     | '/api/visitor'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/published'
     | '/shipping'
+    | '/team'
     | '/welcome'
     | '/api/chat-ai'
     | '/api/visitor'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/products'
     | '/published'
     | '/shipping'
+    | '/team'
     | '/welcome'
     | '/api/chat-ai'
     | '/api/visitor'
@@ -353,6 +365,7 @@ export interface RootRouteChildren {
   ProductsRoute: typeof ProductsRoute
   PublishedRoute: typeof PublishedRoute
   ShippingRoute: typeof ShippingRoute
+  TeamRoute: typeof TeamRoute
   WelcomeRoute: typeof WelcomeRoute
   ApiChatAiRoute: typeof ApiChatAiRoute
   ApiVisitorRoute: typeof ApiVisitorRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShippingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/team': {
+      id: '/team'
+      path: '/team'
+      fullPath: '/team'
+      preLoaderRoute: typeof TeamRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/welcome': {
       id: '/welcome'
       path: '/welcome'
@@ -579,6 +599,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProductsRoute: ProductsRoute,
   PublishedRoute: PublishedRoute,
   ShippingRoute: ShippingRoute,
+  TeamRoute: TeamRoute,
   WelcomeRoute: WelcomeRoute,
   ApiChatAiRoute: ApiChatAiRoute,
   ApiVisitorRoute: ApiVisitorRoute,
