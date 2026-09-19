@@ -5,7 +5,7 @@ import {
   Package, ScrollText, Truck, PhoneCall, Globe, ArrowLeft,
   Bell, CreditCard, AlertTriangle, ShoppingBag, UserRound, Check, HelpCircle,
   MessagesSquare, Clock4, BadgePercent, ChevronDown,
-  ShieldAlert, MailCheck, TrendingUp, Bot, Settings2,
+  ShieldAlert, MailCheck, TrendingUp, Bot, Settings2, Users,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,6 +23,8 @@ import {
   type ConversationRow,
 } from "@/lib/conversations.functions";
 import { getEarningsSummary } from "@/lib/orders.functions";
+import { getCurrentActor } from "@/lib/staff.functions";
+import { hasPermission, type StaffPermission } from "@/lib/staff-types";
 
 
 
@@ -47,18 +49,20 @@ type Tile = {
   description: string;
   icon: React.ReactNode;
   tone: string;
+  /** Permission required to open this tile. */
+  perm: StaffPermission;
 };
 
 const TILES: Tile[] = [
-  { to: "/orders", label: "الطلبات", description: "متابعة وتجهيز", icon: <ShoppingBag className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral" },
-  { to: "/products", label: "المخزون", description: "المنتجات والكميات", icon: <Package className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint" },
-  { to: "/published", label: "الموقع", description: "واجهة متجرك", icon: <Globe className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
-  { to: "/offers", label: "العروض", description: "الخصومات الحالية", icon: <BadgePercent className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold" },
-  { to: "/earnings", label: "الأرباح", description: "ملخص التحصيل", icon: <TrendingUp className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint" },
-  { to: "/shipping", label: "الشحن", description: "المناطق والتكلفة", icon: <Truck className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
-  { to: "/settings/payment-methods", label: "الدفع", description: "طرق استلام المال", icon: <CreditCard className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral" },
-  { to: "/policies", label: "السياسات", description: "شروط متجرك", icon: <ScrollText className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold" },
-  { to: "/contacts", label: "التواصل", description: "بيانات الاتصال", icon: <PhoneCall className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
+  { to: "/orders", label: "الطلبات", description: "متابعة وتجهيز", icon: <ShoppingBag className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral", perm: "orders" },
+  { to: "/products", label: "المخزون", description: "المنتجات والكميات", icon: <Package className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint", perm: "brand_data" },
+  { to: "/published", label: "الموقع", description: "واجهة متجرك", icon: <Globe className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "settings" },
+  { to: "/offers", label: "العروض", description: "الخصومات الحالية", icon: <BadgePercent className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold", perm: "brand_data" },
+  { to: "/earnings", label: "الأرباح", description: "ملخص التحصيل", icon: <TrendingUp className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint", perm: "earnings" },
+  { to: "/shipping", label: "الشحن", description: "المناطق والتكلفة", icon: <Truck className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "brand_data" },
+  { to: "/settings/payment-methods", label: "الدفع", description: "طرق استلام المال", icon: <CreditCard className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral", perm: "settings" },
+  { to: "/policies", label: "السياسات", description: "شروط متجرك", icon: <ScrollText className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold", perm: "brand_data" },
+  { to: "/contacts", label: "التواصل", description: "بيانات الاتصال", icon: <PhoneCall className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "brand_data" },
 ];
 
 function formatMoney(value: number) {
@@ -66,21 +70,35 @@ function formatMoney(value: number) {
 }
 
 function DashboardPage() {
+  const actorQuery = useQuery({
+    queryKey: ["current-actor"],
+    queryFn: () => getCurrentActor(),
+    staleTime: 60_000,
+  });
+  const actor = actorQuery.data ?? null;
+  const can = (perm: StaffPermission) => (actor ? hasPermission(actor, perm) : false);
+  const isOwner = actor?.isOwner ?? false;
+
   const convos = useQuery({
     queryKey: ["conversations"],
     queryFn: () => listConversations(),
     refetchInterval: 15000,
+    enabled: can("conversations"),
   });
   const notifs = useQuery({
     queryKey: ["notifications"],
     queryFn: () => listNotifications(),
     refetchInterval: 15000,
+    enabled: !!actor,
   });
   const earnings = useQuery({
     queryKey: ["earnings-summary"],
     queryFn: () => getEarningsSummary(),
     refetchInterval: 30000,
+    enabled: can("earnings"),
   });
+  const visibleTiles = useMemo(() => TILES.filter((t) => can(t.perm)), [actor]);
+
 
   const activeCount = (convos.data ?? []).filter((c) => {
     const t = new Date(c.last_message_at ?? c.created_at).getTime();
@@ -115,6 +133,7 @@ function DashboardPage() {
           <section className="space-y-3">
             <h1 className="px-1 text-lg font-bold">نظرة سريعة</h1>
             <div className="grid grid-cols-2 gap-3">
+              {can("orders") && (
               <Link to="/orders" className="hub-card flex min-h-28 flex-col justify-between p-4">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-secondary text-secondary-foreground">
                   <ShoppingBag className="h-5 w-5" />
@@ -124,6 +143,8 @@ function DashboardPage() {
                   <span className="block text-2xl font-bold">{earnings.isLoading ? "—" : orderCount}</span>
                 </span>
               </Link>
+              )}
+              {can("conversations") && (
               <Link to="/missing-info" className="hub-card flex min-h-28 flex-col justify-between p-4">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                   <MessagesSquare className="h-5 w-5" />
@@ -133,6 +154,8 @@ function DashboardPage() {
                   <span className="block text-2xl font-bold">{convos.isLoading ? "—" : activeCount}</span>
                 </span>
               </Link>
+              )}
+              {can("earnings") && (
               <Link to="/earnings" className="hub-card col-span-2 flex items-center gap-4 p-4">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">
                   <Clock4 className="h-5 w-5" />
@@ -147,13 +170,15 @@ function DashboardPage() {
                 </span>
                 <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Link>
+              )}
             </div>
           </section>
 
+          {visibleTiles.length > 0 && (
           <section className="space-y-3">
             <h2 className="px-1 text-sm font-bold">إدارة المتجر</h2>
             <div className="grid grid-cols-3 gap-3">
-              {TILES.map((t) => (
+              {visibleTiles.map((t) => (
                 <Link key={t.to} to={t.to as never} className="hub-card flex min-h-28 flex-col items-center justify-center gap-2.5 p-2 text-center transition-transform active:scale-[0.97]">
                   <span className={`grid h-13 w-13 shrink-0 place-items-center rounded-2xl shadow-sm ${t.tone}`}>{t.icon}</span>
                   <span className="min-w-0">
@@ -164,9 +189,11 @@ function DashboardPage() {
               ))}
             </div>
           </section>
+          )}
 
           <section className="space-y-2.5">
             <h2 className="px-1 text-sm font-bold">روابط مساعدة</h2>
+            {can("conversations") && (
             <Link to="/missing-info" className="hub-card flex items-center gap-3 p-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
                 <HelpCircle className="h-5 w-5" />
@@ -174,6 +201,8 @@ function DashboardPage() {
               <span className="min-w-0 flex-1 text-sm font-semibold">معلومات ناقصة</span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
+            )}
+            {can("settings") && (
             <Link to="/settings/notifications" className="hub-card flex items-center gap-3 p-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
                 <MailCheck className="h-5 w-5" />
@@ -181,10 +210,20 @@ function DashboardPage() {
               <span className="min-w-0 flex-1 text-sm font-semibold">إشعارات البريد</span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
+            )}
+            {isOwner && (
+            <Link to="/team" className="hub-card flex items-center gap-3 p-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                <Users className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold">الفريق والصلاحيات</span>
+              <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+            )}
           </section>
 
-           <BrandAgentSettings />
-           <ConversationsSection />
+           {can("conversations") && <BrandAgentSettings />}
+           {can("conversations") && <ConversationsSection />}
            <NotificationsSection rows={notifs.data ?? []} loading={notifs.isLoading} error={notifs.error} />
         </div>
       </div>

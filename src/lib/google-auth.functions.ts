@@ -47,6 +47,31 @@ export const googleSignInMerchant = createServerFn({ method: "POST" })
 
     const { updateSession } = await import("@tanstack/react-start/server");
     const { getSessionConfig } = await import("@/lib/session.server");
+
+    // Staff sign-in: the email belongs to a team member, so the session runs
+    // on the OWNER's merchant id with the staff id attached for permissions.
+    const { findStaffByEmail, touchStaffLogin } = await import("@/lib/staff.server");
+    const staff = await findStaffByEmail(user.email);
+    if (staff) {
+      if (staff.member.status !== "active") {
+        throw new Error("تم إيقاف هذا الحساب. تواصل مع صاحب الحساب.");
+      }
+      await updateSession(getSessionConfig(), {
+        userId: staff.merchantId,
+        email: user.email,
+        staffId: staff.member.id,
+        actorEmail: user.email,
+      });
+      await touchStaffLogin(staff.member.id);
+      return {
+        ok: true,
+        message: "تم تسجيل الدخول.",
+        email: user.email,
+        setupCompleted: true,
+        nextRoute: "/dashboard",
+      };
+    }
+
     await updateSession(getSessionConfig(), { userId: user.id, email: user.email });
 
     const { ensureProfile, getSetupCompleted } = await import("@/lib/profile.server");

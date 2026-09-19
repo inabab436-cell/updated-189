@@ -75,11 +75,11 @@ export interface OfferInput {
 
 export const listOffers = createServerFn({ method: "GET" }).handler(
   async (): Promise<OfferDTO[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { mapOfferRow, isLive, hasEnded } = await import("@/lib/offers.server");
     const { loadPendingOfferUsage } = await import("@/lib/offer-pending.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const { data, error } = await admin
@@ -170,10 +170,10 @@ export const listOffers = createServerFn({ method: "GET" }).handler(
 export const saveOffer = createServerFn({ method: "POST" })
   .inputValidator((v: OfferInput) => v)
   .handler(async ({ data }): Promise<{ ok: true; id: string; notified: number }> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { mapOfferRow, isLive, buildBroadcastMessage } = await import("@/lib/offers.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const title = String(data.title ?? "").trim();
@@ -297,9 +297,9 @@ export const saveOffer = createServerFn({ method: "POST" })
 export const deleteOffer = createServerFn({ method: "POST" })
   .inputValidator((v: { id: string }) => v)
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
     const { error } = await admin
       .from("offers")

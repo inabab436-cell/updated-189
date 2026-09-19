@@ -40,8 +40,8 @@ export interface ConversationDetail {
 
 
 async function loadUserAdmin() {
-  const { requireUserId } = await import("@/lib/session-guard.server");
-  const { userId } = await requireUserId();
+  const { requirePermission } = await import("@/lib/session-guard.server");
+  const { userId } = await requirePermission("conversations");
   const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
   return { userId, admin: getSupabaseAdmin() };
 }

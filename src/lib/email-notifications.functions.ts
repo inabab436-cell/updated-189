@@ -22,9 +22,9 @@ const DEFAULTS: EmailNotificationSettings = {
 
 export const getEmailNotificationSettings = createServerFn({ method: "GET" }).handler(
   async (): Promise<EmailNotificationSettingsView> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId, email } = await requireUserId();
+    const { userId, email } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
     const { data } = await admin
       .from("email_notification_settings")
@@ -47,9 +47,9 @@ const updateSchema = z.object({
 export const updateEmailNotificationSettings = createServerFn({ method: "POST" })
   .inputValidator((v: EmailNotificationSettings) => updateSchema.parse(v))
   .handler(async ({ data }): Promise<EmailNotificationSettings> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
     const { error } = await admin
       .from("email_notification_settings")

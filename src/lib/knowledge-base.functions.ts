@@ -21,10 +21,10 @@ export interface KnowledgeBaseDTO {
 
 export const listKnowledgeBase = createServerFn({ method: "GET" }).handler(
   async (): Promise<KnowledgeBaseDTO[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { resolveMerchantIdByUser } = await import("@/lib/merchant-data.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
     const merchantId = await resolveMerchantIdByUser(admin, userId);
     if (!merchantId) return [];
@@ -51,10 +51,10 @@ export const upsertKnowledgeBaseEntry = createServerFn({ method: "POST" })
     },
   )
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { resolveMerchantIdByUser } = await import("@/lib/merchant-data.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
     const merchantId = await resolveMerchantIdByUser(admin, userId);
     if (!merchantId) invalid("No store found for this account.");
@@ -95,10 +95,10 @@ export const deleteKnowledgeBaseEntry = createServerFn({ method: "POST" })
     return d;
   })
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { resolveMerchantIdByUser } = await import("@/lib/merchant-data.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
     const merchantId = await resolveMerchantIdByUser(admin, userId);
     if (!merchantId) invalid("No store found for this account.");

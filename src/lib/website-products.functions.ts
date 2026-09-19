@@ -52,10 +52,10 @@ export interface WebsiteProductDTO {
 // ---------- LIST ----------------------------------------------------------
 export const listWebsiteProducts = createServerFn({ method: "GET" }).handler(
   async (): Promise<WebsiteProductDTO[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { createSignedUrl } = await import("@/lib/storage.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const BASE_COLS = "id, name, description, price, currency, is_published, created_at, internal_description_status";
@@ -167,10 +167,10 @@ const variantKey = (color: unknown, size: unknown) =>
  */
 export const listProductSales = createServerFn({ method: "GET" }).handler(
   async (): Promise<ProductSalesDTO[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { normalizeProductText } = await import("@/lib/product-name-match");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const { data: products } = await admin
@@ -303,9 +303,9 @@ export const upsertWebsiteProduct = createServerFn({ method: "POST" })
   })
 
   .handler(async ({ data }): Promise<{ id: string; colors: { id: string; label: string }[]; sizes: { id: string; label: string }[] }> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     let productId = data.id;
@@ -437,10 +437,10 @@ export const deleteWebsiteProduct = createServerFn({ method: "POST" })
     return { id: String(d.id) };
   })
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { UPLOAD_BUCKET } = await import("@/lib/storage.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     // Best-effort remove image blobs from storage before dropping the row.
@@ -486,10 +486,10 @@ export const uploadProductImage = createServerFn({ method: "POST" })
     };
   })
   .handler(async ({ data }): Promise<ImageDTO> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { uploadOriginalFile, createSignedUrl } = await import("@/lib/storage.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     // Verify ownership of the product.
@@ -539,10 +539,10 @@ export const deleteProductImage = createServerFn({ method: "POST" })
     return { imageId: String(d.imageId) };
   })
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { UPLOAD_BUCKET } = await import("@/lib/storage.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const { data: row } = await admin.from("product_images")
@@ -566,9 +566,9 @@ export const setProductPublished = createServerFn({ method: "POST" })
     return { id: String(d.id), is_published: Boolean(d.is_published) };
   })
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
     const { error } = await admin.from("products").update({
       is_published: data.is_published,
@@ -607,11 +607,11 @@ export const analyzeProductImage = createServerFn({ method: "POST" })
     return { imageId: String(d.imageId) };
   })
   .handler(async ({ data }): Promise<AnalyzedImageSuggestion> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { createSignedUrl } = await import("@/lib/storage.server");
     const { suggestProductFromImage } = await import("@/lib/product-image-suggest.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const { data: row } = await admin.from("product_images")
@@ -647,11 +647,11 @@ export const analyzeProductImageFile = createServerFn({ method: "POST" })
     return { file };
   })
   .handler(async ({ data }): Promise<AnalyzedImageSuggestion> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { uploadOriginalFile, createSignedUrl, UPLOAD_BUCKET } = await import("@/lib/storage.server");
     const { suggestProductFromImage } = await import("@/lib/product-image-suggest.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const bytes = await data.file.arrayBuffer();
@@ -685,10 +685,10 @@ export const retryProductDescription = createServerFn({ method: "POST" })
     return { productId: String(d.productId) };
   })
   .handler(async ({ data }) => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { regenerateProductDescription } = await import("@/lib/product-vision.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("brand_data");
     const admin = getSupabaseAdmin();
 
     const { data: prod } = await admin.from("products")

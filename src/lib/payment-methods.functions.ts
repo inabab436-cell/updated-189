@@ -119,9 +119,9 @@ const detailSchema = z.object({
 
 export const listPaymentMethods = createServerFn({ method: "GET" }).handler(
   async (): Promise<PaymentMethod[]> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
 
     const { data, error } = await admin
@@ -153,9 +153,9 @@ export const createPaymentMethod = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<PaymentMethod> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
 
     const { count } = await admin
@@ -203,9 +203,9 @@ export const updatePaymentMethod = createServerFn({ method: "POST" })
       .parse(d),
   )
   .handler(async ({ data }): Promise<{ ok: true }> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
 
     const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
@@ -258,9 +258,9 @@ function stripUndefined<T extends Record<string, unknown>>(o: T): Partial<T> {
 export const deletePaymentMethod = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ id: z.string().uuid() }).parse(d))
   .handler(async ({ data }): Promise<{ ok: true }> => {
-    const { requireUserId } = await import("@/lib/session-guard.server");
+    const { requirePermission } = await import("@/lib/session-guard.server");
     const { getSupabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { userId } = await requireUserId();
+    const { userId } = await requirePermission("settings");
     const admin = getSupabaseAdmin();
     const { error } = await admin
       .from("payment_methods")
