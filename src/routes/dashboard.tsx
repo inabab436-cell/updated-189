@@ -70,21 +70,35 @@ function formatMoney(value: number) {
 }
 
 function DashboardPage() {
+  const actorQuery = useQuery({
+    queryKey: ["current-actor"],
+    queryFn: () => getCurrentActor(),
+    staleTime: 60_000,
+  });
+  const actor = actorQuery.data ?? null;
+  const can = (perm: StaffPermission) => (actor ? hasPermission(actor, perm) : false);
+  const isOwner = actor?.isOwner ?? false;
+
   const convos = useQuery({
     queryKey: ["conversations"],
     queryFn: () => listConversations(),
     refetchInterval: 15000,
+    enabled: can("conversations"),
   });
   const notifs = useQuery({
     queryKey: ["notifications"],
     queryFn: () => listNotifications(),
     refetchInterval: 15000,
+    enabled: !!actor,
   });
   const earnings = useQuery({
     queryKey: ["earnings-summary"],
     queryFn: () => getEarningsSummary(),
     refetchInterval: 30000,
+    enabled: can("earnings"),
   });
+  const visibleTiles = useMemo(() => TILES.filter((t) => can(t.perm)), [actor]);
+
 
   const activeCount = (convos.data ?? []).filter((c) => {
     const t = new Date(c.last_message_at ?? c.created_at).getTime();
