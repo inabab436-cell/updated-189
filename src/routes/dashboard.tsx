@@ -133,6 +133,7 @@ function DashboardPage() {
           <section className="space-y-3">
             <h1 className="px-1 text-lg font-bold">نظرة سريعة</h1>
             <div className="grid grid-cols-2 gap-3">
+              {can("orders") && (
               <Link to="/orders" className="hub-card flex min-h-28 flex-col justify-between p-4">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-secondary text-secondary-foreground">
                   <ShoppingBag className="h-5 w-5" />
@@ -142,6 +143,8 @@ function DashboardPage() {
                   <span className="block text-2xl font-bold">{earnings.isLoading ? "—" : orderCount}</span>
                 </span>
               </Link>
+              )}
+              {can("conversations") && (
               <Link to="/missing-info" className="hub-card flex min-h-28 flex-col justify-between p-4">
                 <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent text-accent-foreground">
                   <MessagesSquare className="h-5 w-5" />
@@ -151,6 +154,8 @@ function DashboardPage() {
                   <span className="block text-2xl font-bold">{convos.isLoading ? "—" : activeCount}</span>
                 </span>
               </Link>
+              )}
+              {can("earnings") && (
               <Link to="/earnings" className="hub-card col-span-2 flex items-center gap-4 p-4">
                 <span className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-secondary text-secondary-foreground">
                   <Clock4 className="h-5 w-5" />
@@ -165,13 +170,15 @@ function DashboardPage() {
                 </span>
                 <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
               </Link>
+              )}
             </div>
           </section>
 
+          {visibleTiles.length > 0 && (
           <section className="space-y-3">
             <h2 className="px-1 text-sm font-bold">إدارة المتجر</h2>
             <div className="grid grid-cols-3 gap-3">
-              {TILES.map((t) => (
+              {visibleTiles.map((t) => (
                 <Link key={t.to} to={t.to as never} className="hub-card flex min-h-28 flex-col items-center justify-center gap-2.5 p-2 text-center transition-transform active:scale-[0.97]">
                   <span className={`grid h-13 w-13 shrink-0 place-items-center rounded-2xl shadow-sm ${t.tone}`}>{t.icon}</span>
                   <span className="min-w-0">
@@ -182,9 +189,11 @@ function DashboardPage() {
               ))}
             </div>
           </section>
+          )}
 
           <section className="space-y-2.5">
             <h2 className="px-1 text-sm font-bold">روابط مساعدة</h2>
+            {can("conversations") && (
             <Link to="/missing-info" className="hub-card flex items-center gap-3 p-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
                 <HelpCircle className="h-5 w-5" />
@@ -192,6 +201,8 @@ function DashboardPage() {
               <span className="min-w-0 flex-1 text-sm font-semibold">معلومات ناقصة</span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
+            )}
+            {can("settings") && (
             <Link to="/settings/notifications" className="hub-card flex items-center gap-3 p-4">
               <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
                 <MailCheck className="h-5 w-5" />
@@ -199,10 +210,20 @@ function DashboardPage() {
               <span className="min-w-0 flex-1 text-sm font-semibold">إشعارات البريد</span>
               <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
             </Link>
+            )}
+            {isOwner && (
+            <Link to="/team" className="hub-card flex items-center gap-3 p-4">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-muted text-foreground">
+                <Users className="h-5 w-5" />
+              </span>
+              <span className="min-w-0 flex-1 text-sm font-semibold">الفريق والصلاحيات</span>
+              <ArrowLeft className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </Link>
+            )}
           </section>
 
-           <BrandAgentSettings />
-           <ConversationsSection />
+           {can("conversations") && <BrandAgentSettings />}
+           {can("conversations") && <ConversationsSection />}
            <NotificationsSection rows={notifs.data ?? []} loading={notifs.isLoading} error={notifs.error} />
         </div>
       </div>
