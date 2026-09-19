@@ -47,18 +47,20 @@ type Tile = {
   description: string;
   icon: React.ReactNode;
   tone: string;
+  /** Permission required to open this tile. */
+  perm: StaffPermission;
 };
 
 const TILES: Tile[] = [
-  { to: "/orders", label: "الطلبات", description: "متابعة وتجهيز", icon: <ShoppingBag className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral" },
-  { to: "/products", label: "المخزون", description: "المنتجات والكميات", icon: <Package className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint" },
-  { to: "/published", label: "الموقع", description: "واجهة متجرك", icon: <Globe className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
-  { to: "/offers", label: "العروض", description: "الخصومات الحالية", icon: <BadgePercent className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold" },
-  { to: "/earnings", label: "الأرباح", description: "ملخص التحصيل", icon: <TrendingUp className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint" },
-  { to: "/shipping", label: "الشحن", description: "المناطق والتكلفة", icon: <Truck className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
-  { to: "/settings/payment-methods", label: "الدفع", description: "طرق استلام المال", icon: <CreditCard className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral" },
-  { to: "/policies", label: "السياسات", description: "شروط متجرك", icon: <ScrollText className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold" },
-  { to: "/contacts", label: "التواصل", description: "بيانات الاتصال", icon: <PhoneCall className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky" },
+  { to: "/orders", label: "الطلبات", description: "متابعة وتجهيز", icon: <ShoppingBag className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral", perm: "orders" },
+  { to: "/products", label: "المخزون", description: "المنتجات والكميات", icon: <Package className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint", perm: "brand_data" },
+  { to: "/published", label: "الموقع", description: "واجهة متجرك", icon: <Globe className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "settings" },
+  { to: "/offers", label: "العروض", description: "الخصومات الحالية", icon: <BadgePercent className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold", perm: "brand_data" },
+  { to: "/earnings", label: "الأرباح", description: "ملخص التحصيل", icon: <TrendingUp className="h-6 w-6" />, tone: "bg-hub-mint-soft text-hub-mint", perm: "earnings" },
+  { to: "/shipping", label: "الشحن", description: "المناطق والتكلفة", icon: <Truck className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "brand_data" },
+  { to: "/settings/payment-methods", label: "الدفع", description: "طرق استلام المال", icon: <CreditCard className="h-6 w-6" />, tone: "bg-hub-coral-soft text-hub-coral", perm: "settings" },
+  { to: "/policies", label: "السياسات", description: "شروط متجرك", icon: <ScrollText className="h-6 w-6" />, tone: "bg-hub-gold-soft text-hub-gold", perm: "brand_data" },
+  { to: "/contacts", label: "التواصل", description: "بيانات الاتصال", icon: <PhoneCall className="h-6 w-6" />, tone: "bg-hub-sky-soft text-hub-sky", perm: "brand_data" },
 ];
 
 function formatMoney(value: number) {
