@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -8,6 +8,8 @@ import {
   UserPlus,
   Trash2,
   ShieldCheck,
+  Link2,
+  Copy,
   Pencil,
   X,
 } from "lucide-react";
@@ -24,8 +26,10 @@ import {
   removeStaffMember,
 } from "@/lib/staff.functions";
 import {
+  buildInviteUrl,
   PERMISSION_LABELS,
   STAFF_PERMISSIONS,
+  STATUS_LABELS,
   type StaffMember,
   type StaffPermission,
 } from "@/lib/staff-types";
@@ -140,6 +144,39 @@ function PermissionPicker({
   );
 }
 
+function InviteLink({ member }: { member: StaffMember }) {
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const url = origin ? buildInviteUrl(origin, member.invite_token) : "";
+
+  async function copy() {
+    if (!url) return;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("تم نسخ الرابط.");
+    } catch {
+      toast.error("تعذّر النسخ، انسخ الرابط يدويًا.");
+    }
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-border/60 bg-muted/40 p-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+        <Link2 className="h-3.5 w-3.5" />
+        رابط دخول الموظف
+      </div>
+      <div className="mt-1.5 flex items-center gap-2">
+        <span dir="ltr" className="min-w-0 flex-1 truncate text-[11px] text-muted-foreground">
+          {url || "…"}
+        </span>
+        <Button variant="secondary" size="sm" className="h-7 px-2" onClick={copy}>
+          <Copy className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function TeamPage() {
   const qc = useQueryClient();
   const q = useQuery({ queryKey: ["staff-members"], queryFn: () => listStaffMembers() });
@@ -158,7 +195,6 @@ function TeamPage() {
       addStaffMember({
         data: {
           name: draft.name,
-          email: draft.email,
           permissions: draft.permissions,
           full_access: draft.fullAccess,
         },
@@ -213,7 +249,7 @@ function TeamPage() {
     setEditingId(member.id);
     setEditDraft({
       name: member.name,
-      email: member.email,
+      email: member.email ?? "",
       fullAccess: member.full_access,
       permissions: member.permissions,
     });
@@ -247,7 +283,8 @@ function TeamPage() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">الفريق</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              أضف موظفين بصلاحيات محددة، وعدّلها أو أوقفها في أي وقت.
+              أضف موظفًا بصلاحيات محددة، أرسل له الرابط ليسجّل بنفسه، وعدّل صلاحياته
+              أو أوقفها في أي وقت.
             </p>
           </div>
         </section>
@@ -286,24 +323,17 @@ function TeamPage() {
                     </Button>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="grid gap-3">
                     <Input
                       placeholder="اسم الموظف"
                       value={draft.name}
                       onChange={(e) => setDraft({ ...draft, name: e.target.value })}
                     />
-                    <Input
-                      dir="ltr"
-                      type="email"
-                      placeholder="بريد Google الخاص به"
-                      value={draft.email}
-                      onChange={(e) => setDraft({ ...draft, email: e.target.value })}
-                    />
                   </div>
 
                   <p className="text-xs leading-relaxed text-muted-foreground">
-                    سيدخل الموظف من نفس صفحة الدخول بحساب Google المكتوب هنا، وسيفتح على
-                    بيانات البراند مع الأقسام المسموح بها فقط.
+                    بعد الإضافة سيظهر رابط خاص بالموظف. أرسل له الرابط، وهو الذي يسجّل
+                    بياناته بنفسه، ثم يفتح على الأقسام المسموح بها فقط.
                   </p>
 
                   <PermissionPicker
@@ -331,7 +361,7 @@ function TeamPage() {
                     ) : (
                       <UserPlus className="ml-1 h-4 w-4" />
                     )}
-                    إضافة الموظف
+                    إنشاء رابط الموظف
                   </Button>
                 </div>
               ) : (
@@ -376,18 +406,21 @@ function TeamPage() {
                             "rounded-full px-2 py-0.5 text-[11px] font-semibold " +
                             (member.status === "active"
                               ? "bg-primary/10 text-primary"
-                              : "bg-muted text-muted-foreground")
+                              : member.status === "invited"
+                                ? "bg-accent text-accent-foreground"
+                                : "bg-muted text-muted-foreground")
                           }
                         >
-                          {member.status === "active" ? "نشط" : "موقوف"}
+                          {STATUS_LABELS[member.status]}
                         </span>
                       </div>
                       <div dir="ltr" className="mt-1 truncate text-xs text-muted-foreground">
-                        {member.email}
+                        {member.email ?? "— لم يسجّل بعد —"}
                       </div>
                       <div className="mt-2 text-xs font-medium">
                         {permissionSummary(member)}
                       </div>
+                      <InviteLink member={member} />
                     </div>
 
                     <div className="flex shrink-0 items-center gap-1">

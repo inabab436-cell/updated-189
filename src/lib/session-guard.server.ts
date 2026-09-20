@@ -56,7 +56,7 @@ export async function requireActor(): Promise<Actor> {
   return {
     merchantId,
     staffId,
-    email: member.email,
+    email: member.email ?? "",
     name: member.name,
     isOwner: false,
     full_access: member.full_access,

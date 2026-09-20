@@ -47,18 +47,42 @@ export const PERMISSION_LABELS: Record<
   },
 };
 
-export type StaffStatus = "active" | "disabled";
+export type StaffStatus = "invited" | "active" | "disabled";
+
+export const STATUS_LABELS: Record<StaffStatus, string> = {
+  invited: "بانتظار التسجيل",
+  active: "نشط",
+  disabled: "موقوف",
+};
+
+/** Build the invite link the owner shares with the staff member. */
+export function buildInviteUrl(origin: string, token: string): string {
+  return `${origin.replace(/\/+$/, "")}/team/join?t=${encodeURIComponent(token)}`;
+}
 
 export interface StaffMember {
   id: string;
-  email: string;
+  /** Null until the staff member opens the invite link and registers. */
+  email: string | null;
+  /** Secret in the invite link. */
+  invite_token: string;
   name: string;
   permissions: StaffPermission[];
   full_access: boolean;
   status: StaffStatus;
   created_at: string;
   updated_at: string;
+  accepted_at: string | null;
   last_login_at: string | null;
+}
+
+/** Public info shown on the invite page before the staff member registers. */
+export interface StaffInviteInfo {
+  name: string;
+  full_access: boolean;
+  permissions: StaffPermission[];
+  status: StaffStatus;
+  email: string | null;
 }
 
 export interface StaffListResult {
