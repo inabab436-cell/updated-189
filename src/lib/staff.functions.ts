@@ -14,6 +14,7 @@ import { createServerFn } from "@tanstack/react-start";
 import {
   normalizePermissions,
   type CurrentActor,
+  type StaffInviteInfo,
   type StaffListResult,
   type StaffMember,
 } from "@/lib/staff-types";
@@ -30,6 +31,12 @@ function ensureName(value: unknown): string {
   const s = String(value ?? "").trim().replace(/\s+/g, " ");
   if (s.length < 2) throw new Error("اكتب اسم الموظف.");
   if (s.length > 80) throw new Error("الاسم طويل جدًا.");
+  return s;
+}
+
+function ensureToken(value: unknown): string {
+  const s = String(value ?? "").trim();
+  if (!/^[0-9a-f]{24,}$/i.test(s)) throw new Error("هذا الرابط غير صالح.");
   return s;
 }
 
@@ -67,15 +74,14 @@ export const listStaffMembers = createServerFn({ method: "GET" }).handler(
   },
 );
 
+/**
+ * Create a staff member as a pending INVITE. The owner never types the staff
+ * email — the returned row carries a secret token that becomes the invite link,
+ * and the staff member registers themself when they open it.
+ */
 export const addStaffMember = createServerFn({ method: "POST" })
   .inputValidator(
-    (data: {
-      email: string;
-      name: string;
-      permissions: string[];
-      full_access?: boolean;
-    }) => ({
-      email: ensureEmail(data?.email),
+    (data: { name: string; permissions: string[]; full_access?: boolean }) => ({
       name: ensureName(data?.name),
       permissions: normalizePermissions(data?.permissions),
       full_access: Boolean(data?.full_access),
@@ -87,17 +93,75 @@ export const addStaffMember = createServerFn({ method: "POST" })
     if (!data.full_access && data.permissions.length === 0) {
       throw new Error("اختر صلاحية واحدة على الأقل.");
     }
-    if (data.email === (owner.email ?? "").trim().toLowerCase()) {
-      throw new Error("هذا هو بريد صاحب الحساب.");
-    }
-    const { createStaff } = await import("@/lib/staff.server");
-    return createStaff({
+    const { createStaffInvite } = await import("@/lib/staff.server");
+    return createStaffInvite({
       merchantId: owner.merchantId,
-      email: data.email,
       name: data.name,
       permissions: data.permissions,
       fullAccess: data.full_access,
     });
+  });
+
+/** Public: what the invite link shows before the staff member registers. */
+export const getStaffInvite = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string }) => ({ token: ensureToken(data?.token) }))
+  .handler(async ({ data }): Promise<StaffInviteInfo> => {
+    const { findStaffByToken } = await import("@/lib/staff.server");
+    const found = await findStaffByToken(data.token);
+    if (!found) throw new Error("هذا الرابط غير صالح أو تم حذفه.");
+    if (found.member.status === "disabled") {
+      throw new Error("تم إيقاف هذا الحساب. تواصل مع صاحب الحساب.");
+    }
+    return {
+      name: found.member.name,
+      full_access: found.member.full_access,
+      permissions: found.member.permissions,
+      status: found.member.status,
+      email: found.member.email,
+    };
+  });
+
+/**
+ * Public: the staff member registers themself with the invite link, then gets a
+ * session scoped to the owner's brand with their own permissions.
+ */
+export const acceptStaffInvite = createServerFn({ method: "POST" })
+  .inputValidator((data: { token: string; email: string; name?: string }) => ({
+    token: ensureToken(data?.token),
+    email: ensureEmail(data?.email),
+    name: data?.name === undefined || String(data.name).trim() === ""
+      ? ""
+      : ensureName(data.name),
+  }))
+  .handler(async ({ data }): Promise<{ ok: true; nextRoute: string; name: string }> => {
+    const { findStaffByToken, acceptStaffInvite: accept, touchStaffLogin } =
+      await import("@/lib/staff.server");
+    const found = await findStaffByToken(data.token);
+    if (!found) throw new Error("هذا الرابط غير صالح أو تم حذفه.");
+    if (found.member.status === "disabled") {
+      throw new Error("تم إيقاف هذا الحساب. تواصل مع صاحب الحساب.");
+    }
+
+    let member = found.member;
+    if (member.status === "invited" || !member.email) {
+      member = await accept({ staffId: member.id, email: data.email, name: data.name });
+    } else {
+      if (member.email !== data.email) {
+        throw new Error("هذا الرابط مسجَّل ببريد آخر. استخدم نفس البريد.");
+      }
+      await touchStaffLogin(member.id);
+    }
+
+    const { updateSession } = await import("@tanstack/react-start/server");
+    const { getSessionConfig } = await import("@/lib/session.server");
+    await updateSession(getSessionConfig(), {
+      userId: found.merchantId,
+      email: member.email ?? data.email,
+      staffId: member.id,
+      actorEmail: member.email ?? data.email,
+    });
+
+    return { ok: true, nextRoute: "/dashboard", name: member.name };
   });
 
 export const updateStaffMember = createServerFn({ method: "POST" })
